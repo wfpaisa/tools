@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planificador de Vacaciones · Colombia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F2027;
+    --bg-2: #14303A;
+    --surface: #1A3A45;
+    --surface-2: #1F4550;
+    --line: #2C5561;
+    --ink: #EFEAE0;
+    --ink-dim: #9FB8BE;
+    --ink-faint: #6E8B92;
+    --gold: #E3B23C;
+    --gold-dim: #6b5827;
+    --rust: #E4572E;
+    --rust-dim: #5c3324;
+    --rust-soft: rgba(228,87,46,0.18);
+    --weekend: #274752;
+    --radius: 14px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+
+  body{
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(227,178,60,0.06), transparent 40%),
+      radial-gradient(circle at 90% 10%, rgba(228,87,46,0.05), transparent 45%);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- HEADER ---------- */
+  header{
+    padding: 56px 0 36px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 14px;
+  }
+  h1{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 700;
+    margin: 0 0 12px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  header p{
+    max-width: 640px;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ---------- CONTROL PANEL ---------- */
+  .panel{
+    margin-top: -1px;
+    padding: 32px 0 8px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    align-items: flex-end;
+  }
+  .field label{
+    display:block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+  .field-input{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  input[type=number]{
+    width: 110px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  input[type=number]:focus{ border-color: var(--gold); }
+  input[type=number]::-webkit-inner-spin-button{ opacity: 0.6; }
+
+  input[type=date]{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 12px 14px;
+    outline: none;
+    color-scheme: dark;
+    transition: border-color .15s ease;
+  }
+  input[type=date]:focus{ border-color: var(--gold); }
+  input[type=date]::-webkit-calendar-picker-indicator{
+    filter: invert(0.75) sepia(0.4) saturate(3) hue-rotate(5deg);
+    cursor: pointer;
+    opacity: 0.85;
+  }
+
+  /* ---------- MODE SWITCH ---------- */
+  .mode-switch{
+    display:inline-grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 4px;
+    position: relative;
+    margin-top: 28px;
+  }
+  .mode-switch button{
+    background: transparent;
+    border: none;
+    color: var(--ink-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    padding: 9px 26px;
+    border-radius: 100px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    transition: color .2s ease;
+    white-space: nowrap;
+  }
+  .mode-switch button.active{ color: #1a1206; }
+  .mode-switch .slider{
+    position: absolute;
+    top: 4px; bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    background: var(--gold);
+    border-radius: 100px;
+    transition: transform .25s cubic-bezier(.4,.0,.2,1), background .25s ease;
+    z-index: 0;
+  }
+  .mode-switch[data-mode="manual"] .slider{
+    transform: translateX(100%);
+    background: var(--rust);
+  }
+
+  /* Contenedores que se muestran/ocultan segun el modo */
+  .mode-auto-only, .mode-manual-only{ display: none !important; }
+  body[data-mode="auto"] .mode-auto-only{ display: flex !important; }
+  body[data-mode="auto"] .field.mode-auto-only,
+  body[data-mode="auto"] .headline-stat.mode-auto-only,
+  body[data-mode="auto"] section.mode-auto-only{ display: block !important; }
+  body[data-mode="manual"] .mode-manual-only{ display: flex !important; }
+  body[data-mode="manual"] .field.mode-manual-only,
+  body[data-mode="manual"] div.mode-manual-only{ display: block !important; }
+  body[data-mode="manual"] .headline-stat.mode-manual-only,
+  body[data-mode="manual"] section.mode-manual-only{ display: block !important; }
+
+  /* ---------- MANUAL RESULT BANNER ---------- */
+  .manual-banner{
+    margin-top: 28px;
+    background: linear-gradient(135deg, rgba(227,178,60,0.10), rgba(227,178,60,0.02));
+    border: 1px solid var(--gold-dim);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+    display: none;
+  }
+  .manual-banner.visible{ display:block; }
+  .manual-banner .mb-eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 10px;
+  }
+  .manual-banner .mb-range{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 14px;
+  }
+  .manual-banner .mb-range .arrow{ color: var(--gold); margin: 0 10px; font-weight: 400; }
+  .manual-banner .mb-grid{
+    display:flex; flex-wrap:wrap; gap: 22px 30px;
+    border-top: 1px dashed var(--gold-dim);
+    padding-top: 14px;
+  }
+  .manual-banner .mb-stat .k{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .manual-banner .mb-stat .v{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .manual-banner .mb-stat .v b{ color: var(--rust); font-family:'IBM Plex Mono', monospace; }
+  .manual-banner .mb-warn{
+    margin-top: 12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--gold);
+    background: rgba(227,178,60,0.08);
+    border-left: 3px solid var(--gold);
+    padding: 8px 12px;
+    border-radius: 4px;
+  }
+
+  .day.manual-day{ background: var(--gold-dim) !important; color: var(--gold) !important; font-weight:700; box-shadow: inset 0 0 0 1px var(--gold); }
+  /* Inicio y fin de vacaciones en naranja (rust) para diferenciarlos
+     de los festivos dorados. Se distinguen por el marcador de esquina:
+     ● verde = inicio, ● morado = fin. */
+  .day.manual-start{
+    background: var(--rust) !important;
+    color: #1a0d08 !important;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--rust);
+  }
+  .day.manual-start::after{
+    content:"";
+    position:absolute;
+    top:3px; right:3px;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:#4CAF50;
+  }
+  .day.manual-end{
+    background: var(--rust) !important;
+    color: #1a0d08 !important;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--rust);
+  }
+  .day.manual-end::after{
+    content:"";
+    position:absolute;
+    top:3px; right:3px;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:#9C6ADE;
+  }
+
+  /* Días seleccionables en modo manual */
+  .day.selectable{
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease, transform .12s ease;
+  }
+  .day.selectable:hover{
+    background: rgba(227,178,60,0.35) !important;
+    color: var(--gold) !important;
+    transform: scale(1.12);
+    z-index: 2;
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .day.selectable:hover::before{
+    content:"";
+    position:absolute;
+    inset:-3px;
+    border-radius:8px;
+    border: 1px dashed var(--gold);
+    pointer-events:none;
+  }
+
+  /* Indicador cuando no hay fecha seleccionada en modo manual */
+  .hint-pick{
+    display:none;
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: rgba(227,178,60,0.08);
+    border: 1px dashed var(--gold-dim);
+    border-radius: 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    text-align:center;
+  }
+  .hint-pick b{ color: var(--ink); }
+  body[data-mode="manual"] .hint-pick.visible{ display:block; }
+  /* Último día trabajado antes de salir (verde) */
+  .day.prev-work{
+    background: rgba(76,175,80,0.28) !important;
+    color: #9be8a0 !important;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 2px #4CAF50;
+  }
+  .day.prev-work::after{
+    content:"";
+    position:absolute;
+    top:3px; right:3px;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:#4CAF50;
+  }
+  /* Primer día hábil al regresar (morado) */
+  .day.next-work{
+    background: rgba(156,106,222,0.32) !important;
+    color: #d6bdff !important;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 2px #9C6ADE;
+  }
+  .day.next-work::after{
+    content:"";
+    position:absolute;
+    top:3px; right:3px;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:#9C6ADE;
+  }
+
+  .stepper{ display:flex; flex-direction:column; gap:4px; }
+  .stepper button{
+    width: 28px; height: 22px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    border-radius: 6px;
+    cursor:pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .stepper button:hover{ border-color: var(--gold); color: var(--gold); }
+
+  .headline-stat{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    color: var(--ink);
+    flex: 1;
+    min-width: 260px;
+  }
+  .headline-stat b{
+    color: var(--rust);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .headline-stat .sub{
+    display:block;
+    margin-top:4px;
+    font-family:'Inter',sans-serif;
+    font-size: 13.5px;
+    color: var(--ink-faint);
+  }
+
+  .quick-presets{ display:flex; gap:8px; flex-wrap:wrap; }
+  .quick-presets button{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    padding: 8px 14px;
+    border-radius: 100px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  .quick-presets button:hover, .quick-presets button.active{
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(227,178,60,0.08);
+  }
+
+  /* ---------- RESULTS / TICKETS ---------- */
+  section.results{ padding: 40px 0 10px; }
+  .results-head{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .results-head .section-desc{ margin-bottom: 0; }
+  .section-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .section-desc{
+    color: var(--ink-faint);
+    font-size: 14px;
+    margin: 0;
+  }
+  .count-picker{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex-shrink: 0;
+  }
+  .count-picker label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .count-picker select{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 8px 32px 8px 14px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%239FB8BE' d='M5 6L0 0h10z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .count-picker select:focus,
+  .count-picker select:hover{ border-color: var(--gold); }
+
+  .tickets{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
+  }
+
+  .ticket{
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 22px 18px;
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    overflow: hidden;
+  }
+  .ticket::before{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0;
+    width: 5px;
+    background: var(--gold-dim);
+    transition: background .15s ease;
+  }
+  .ticket:hover{ transform: translateY(-2px); border-color: var(--ink-faint); }
+  .ticket.selected{
+    border-color: var(--rust);
+    background: linear-gradient(180deg, rgba(228,87,46,0.10), rgba(228,87,46,0.02));
+  }
+  .ticket.selected::before{ background: var(--rust); }
+
+  .ticket-top{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom: 14px;
+  }
+  .ticket-rank{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+  .ticket-days{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .ticket-days span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .ticket-range{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 15.5px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .ticket-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    display:flex;
+    justify-content: space-between;
+    border-top: 1px dashed var(--line);
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+  .ticket-holidays{
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .ticket-holidays b{ color: var(--ink-dim); font-weight:500; }
+
+  .empty-state{
+    color: var(--ink-faint);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 30px 0;
+  }
+
+  /* ---------- LEGEND ---------- */
+  .legend{
+    display:flex; gap:22px; flex-wrap:wrap;
+    padding: 28px 0 8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+  }
+  .legend-item{ display:flex; align-items:center; gap:8px; }
+  .swatch{ width:13px; height:13px; border-radius:4px; display:inline-block; }
+  .swatch.holiday{ background: var(--gold); }
+  .swatch.weekend{ background: var(--weekend); border:1px solid var(--line); }
+  .swatch.vacation{ background: var(--rust); }
+  .swatch.bridge{ background: var(--rust-soft); border:1px solid var(--rust); }
+  .swatch.prev-work{ background: rgba(76,175,80,0.28); border:2px solid #4CAF50; }
+  .swatch.next-work{ background: rgba(156,106,222,0.32); border:2px solid #9C6ADE; }
+
+  /* ---------- CALENDAR GRID ---------- */
+  .calendar-year{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+    padding: 12px 0 40px;
+  }
+
+  /* Título separador de año (ocupa todo el ancho de la grilla) */
+  .year-header{
+    grid-column: 1 / -1;
+    display:flex;
+    align-items:center;
+    gap: 16px;
+    margin-top: 18px;
+    margin-bottom: 4px;
+  }
+  .year-header:first-child{ margin-top: 0; }
+  .year-header .yh-num{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .year-header .yh-line{
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+  }
+  .year-header .yh-count{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+
+  .month{
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 16px 14px;
+  }
+  .month-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display:flex;
+    justify-content: space-between;
+    align-items:baseline;
+  }
+  .month-title .n{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+  .dow-row, .day-row{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .dow-row{ margin-bottom: 6px; }
+  .dow{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+  .day-row{ margin-bottom: 3px; }
+  .day{
+    aspect-ratio: 1;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    border-radius: 6px;
+    position: relative;
+  }
+  .day.empty{ visibility:hidden; }
+  .day.weekend{ background: var(--weekend); color: var(--ink-faint); }
+  .day.holiday{ background: var(--gold-dim); color: var(--gold); font-weight:600; }
+  .day.holiday.weekend{ background: var(--gold-dim); }
+  .day.in-bridge{ background: var(--rust-soft); color: var(--ink); }
+  .day.vacation-day{ background: var(--rust); color: #1a0d08; font-weight:700; }
+  .day.vacation-day.holiday{ background: var(--rust); color: #1a0d08; }
+
+  footer{
+    text-align:center;
+    color: var(--ink-faint);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 30px 0 10px;
+  }
+
+  @media (max-width: 640px){
+    .panel{ flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body data-mode="auto">
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Colombia · Planificador de Vacaciones</p>
+    <h1>Planificador de Puentes</h1>
+    <p>Escribe cuántos días hábiles de vacaciones tienes y el planificador calcula, sobre los festivos oficiales de Colombia, los rangos de fechas donde consigues más días libres seguidos. El calendario cubre el año en curso y el siguiente, así puedes planear vacaciones que cruzen de diciembre a enero.</p>
+  </header>
+
+  <div class="mode-switch" id="modeSwitch" data-mode="auto">
+    <span class="slider"></span>
+    <button data-mode="auto" class="active">Automático</button>
+    <button data-mode="manual">Manual</button>
+  </div>
+
+  <div class="panel">
+    <div class="field mode-auto-only mode-manual-only">
+      <label for="daysInput">Días hábiles disponibles</label>
+      <div class="field-input">
+        <input type="number" id="daysInput" min="1" max="245" value="20">
+        <div class="stepper">
+          <button id="stepUp">▲</button>
+          <button id="stepDown">▼</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field mode-auto-only">
+      <label>Atajos</label>
+      <div class="quick-presets" id="presets">
+        <button data-v="5">5</button>
+        <button data-v="10">10</button>
+        <button data-v="15">15</button>
+        <button data-v="20" class="active">20</button>
+        <button data-v="30">30</button>
+      </div>
+    </div>
+
+    <div class="field mode-manual-only">
+      <label for="startDate">Empieza el (o haz clic en el calendario)</label>
+      <input type="date" id="startDate">
+    </div>
+
+    <div class="headline-stat mode-auto-only" id="headlineStat"></div>
+  </div>
+
+  <div class="manual-banner" id="manualBanner"></div>
+
+  <section class="results mode-auto-only">
+    <div class="results-head">
+      <div>
+        <h2 class="section-title">Mejores rangos</h2>
+        <p class="section-desc">Ordenados de mayor a menor cantidad de días corridos. Haz clic en una tarjeta para verla resaltada en el calendario.</p>
+      </div>
+      <div class="count-picker">
+        <label for="countSelect">Mostrar</label>
+        <select id="countSelect">
+          <option value="3">3</option>
+          <option value="6">6</option>
+          <option value="9">9</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+          <option value="18">18</option>
+          <option value="21">21</option>
+          <option value="24">24</option>
+          <option value="27">27</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+    </div>
+    <div class="tickets" id="tickets"></div>
+  </section>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch holiday"></span> Festivo</div>
+    <div class="legend-item"><span class="swatch weekend"></span> Fin de semana</div>
+    <div class="legend-item"><span class="swatch bridge"></span> Días libres del rango elegido</div>
+    <div class="legend-item"><span class="swatch vacation"></span> Día hábil a solicitar</div>
+    <div class="legend-item"><span class="swatch prev-work"></span> Último día trabajado antes de salir</div>
+    <div class="legend-item"><span class="swatch next-work"></span> Primer día hábil al regresar</div>
+  </div>
+
+  <div class="hint-pick" id="hintPick">👆 <b>Haz clic en cualquier día del calendario</b> para empezar tus vacaciones ahí.</div>
+
+  <div class="calendar-year" id="calendarYear"></div>
+
+  <footer><span class="year-tag">2026</span> · Festivos oficiales de Colombia (Ley Emiliani incluida) · Editables desde el código</footer>
+</div>
+
+<script>
+/* ============================================================================
+ *  PLANIFICADOR DE VACACIONES · Colombia
+ * ----------------------------------------------------------------------------
+ *  Los años disponibles se calculan automáticamente: año en curso + siguiente.
+ *  Para cambiar el catálogo de festivos, edita el objeto HOLIDAYS más abajo.
+ * ========================================================================== */
+
+const CURRENT_YEAR = new Date().getFullYear();
+const AVAILABLE_YEARS = [CURRENT_YEAR, CURRENT_YEAR + 1];
+let YEAR = CURRENT_YEAR; // año actualmente seleccionado en el selector
+
+/* ============================================================================
+ *  📅 FESTIVOS OFICIALES DE COLOMBIA  ·  EDITABLES
+ * ============================================================================
+ *  Cada año tiene su propia lista. Formato de cada entrada:
+ *
+ *      [ "día-mes", "Nombre del festivo" ]
+ *
+ *  - "día-mes" → día y mes en formato DD-MM (ej. "1-1" = 1 de enero,
+ *                "25-12" = 25 de diciembre). NO lleva ceros a la izquierda.
+ *  - El nombre se muestra en el calendario (tooltip) y en las tarjetas.
+ *
+ *  Para AGREGAR un festivo: añade una línea nueva al año correspondiente.
+ *  Para EDITAR: cambia el nombre o la fecha.
+ *  Para BORRAR: elimina o comenta la línea (con // al inicio).
+ *
+ *  ⚠️ Estas fechas ya incluyen el traslado por la Ley Emiliani (los festivos
+ *     que caen entre semana se mueven al lunes siguiente). Verifica siempre
+ *     con una fuente oficial antes de actualizarlas.
+ * ========================================================================== */
+const HOLIDAYS = {
+
+  /* ----- 2026 -----------------------------------------------------------
+   * 21 festivos. Pascua: 5-abr. Fuente: calendariodecolombia.com
+   * -------------------------------------------------------------------- */
+  2026: [
+    [ "1-1",   "Año Nuevo" ],
+    [ "12-1",  "Día de los Reyes Magos" ],
+    [ "23-3",  "Día de San José" ],
+    [ "29-3",  "Domingo de Ramos" ],
+    [ "2-4",   "Jueves Santo" ],
+    [ "3-4",   "Viernes Santo" ],
+    [ "5-4",   "Domingo de Resurrección" ],
+    [ "1-5",   "Día del Trabajo" ],
+    [ "18-5",  "Día de la Ascensión" ],
+    [ "8-6",   "Corpus Christi" ],
+    [ "15-6",  "Sagrado Corazón" ],
+    [ "29-6",  "San Pedro y San Pablo" ],
+    [ "13-7",  "Día de Nuestra Señora del Rosario de Chiquinquirá" ],
+    [ "20-7",  "Día de la Independencia" ],
+    [ "7-8",   "Batalla de Boyacá" ],
+    [ "17-8",  "La Asunción de la Virgen" ],
+    [ "12-10", "Día de la Raza" ],
+    [ "2-11",  "Todos los Santos" ],
+    [ "16-11", "Independencia de Cartagena" ],
+    [ "8-12",  "Día de la Inmaculada Concepción" ],
+    [ "25-12", "Día de Navidad" ],
+  ],
+
+  /* ----- 2027 -----------------------------------------------------------
+   * 21 festivos. Pascua: 28-mar. Incluye Semana Santa completa.
+   * -------------------------------------------------------------------- */
+  2027: [
+    [ "1-1",   "Año Nuevo" ],
+    [ "11-1",  "Día de los Reyes Magos" ],
+    [ "21-3",  "Domingo de Ramos" ],
+    [ "22-3",  "Día de San José" ],
+    [ "25-3",  "Jueves Santo" ],
+    [ "26-3",  "Viernes Santo" ],
+    [ "28-3",  "Domingo de Resurrección" ],
+    [ "1-5",   "Día del Trabajo" ],
+    [ "10-5",  "Día de la Ascensión" ],
+    [ "31-5",  "Corpus Christi" ],
+    [ "7-6",   "Sagrado Corazón" ],
+    [ "5-7",   "San Pedro y San Pablo" ],
+    [ "12-7",  "Día de Nuestra Señora del Rosario de Chiquinquirá" ],
+    [ "20-7",  "Día de la Independencia" ],
+    [ "7-8",   "Batalla de Boyacá" ],
+    [ "16-8",  "La Asunción de la Virgen" ],
+    [ "18-10", "Día de la Raza" ],
+    [ "1-11",  "Todos los Santos" ],
+    [ "15-11", "Independencia de Cartagena" ],
+    [ "8-12",  "Día de la Inmaculada Concepción" ],
+    [ "25-12", "Día de Navidad" ],
+  ],
+
+  /* ----- 2028 -----------------------------------------------------------
+   * 21 festivos. Pascua: 16-abr.
+   * -------------------------------------------------------------------- */
+  2028: [
+    [ "1-1",   "Año Nuevo" ],
+    [ "10-1",  "Día de los Reyes Magos" ],
+    [ "20-3",  "Día de San José" ],
+    [ "9-4",   "Domingo de Ramos" ],
+    [ "13-4",  "Jueves Santo" ],
+    [ "14-4",  "Viernes Santo" ],
+    [ "16-4",  "Domingo de Resurrección" ],
+    [ "1-5",   "Día del Trabajo" ],
+    [ "29-5",  "Día de la Ascensión" ],
+    [ "19-6",  "Corpus Christi" ],
+    [ "26-6",  "Sagrado Corazón" ],
+    [ "3-7",   "San Pedro y San Pablo" ],
+    [ "10-7",  "Día de Nuestra Señora del Rosario de Chiquinquirá" ],
+    [ "20-7",  "Día de la Independencia" ],
+    [ "7-8",   "Batalla de Boyacá" ],
+    [ "21-8",  "La Asunción de la Virgen" ],
+    [ "16-10", "Día de la Raza" ],
+    [ "6-11",  "Todos los Santos" ],
+    [ "13-11", "Independencia de Cartagena" ],
+    [ "8-12",  "Día de la Inmaculada Concepción" ],
+    [ "25-12", "Día de Navidad" ],
+  ],
+
+  /* ----- 2029 -----------------------------------------------------------
+   * 21 festivos. Pascua: 1-abr.
+   * -------------------------------------------------------------------- */
+  2029: [
+    [ "1-1",   "Año Nuevo" ],
+    [ "8-1",   "Día de los Reyes Magos" ],
+    [ "19-3",  "Día de San José" ],
+    [ "25-3",  "Domingo de Ramos" ],
+    [ "29-3",  "Jueves Santo" ],
+    [ "30-3",  "Viernes Santo" ],
+    [ "1-4",   "Domingo de Resurrección" ],
+    [ "1-5",   "Día del Trabajo" ],
+    [ "14-5",  "Día de la Ascensión" ],
+    [ "4-6",   "Corpus Christi" ],
+    [ "11-6",  "Sagrado Corazón" ],
+    [ "2-7",   "San Pedro y San Pablo" ],
+    [ "9-7",   "Día de Nuestra Señora del Rosario de Chiquinquirá" ],
+    [ "20-7",  "Día de la Independencia" ],
+    [ "7-8",   "Batalla de Boyacá" ],
+    [ "20-8",  "La Asunción de la Virgen" ],
+    [ "15-10", "Día de la Raza" ],
+    [ "5-11",  "Todos los Santos" ],
+    [ "12-11", "Independencia de Cartagena" ],
+    [ "8-12",  "Día de la Inmaculada Concepción" ],
+    [ "25-12", "Día de Navidad" ],
+  ],
+
+  /* ----- PLANTILLA para futuros años ------------------------------------
+   * Copia este bloque, cámbiale el año y ajusta las fechas. Si un año no
+   * está listado aquí, la app mostrará el calendario sin festivos.
+   * --------------------------------------------------------------------
+  2030: [
+    [ "1-1",   "Año Nuevo" ],
+    // ... agrega aquí los festivos de 2030
+  ],
+   * -------------------------------------------------------------------- */
+};
+
+/* ============================================================================
+ *  FIN DE LA SECCIÓN EDITABLE
+ *  A partir de aquí es la lógica interna de la app (no necesitas tocarla).
+ * ========================================================================== */
+
+const MONTH_NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DOW = ["L","M","M","J","V","S","D"];
+
+// Rango de años que se muestran: año en curso + siguiente. Las vacaciones
+// pueden cruzar de diciembre a enero, por eso cargamos ambos años seguidos
+// (24 meses contiguos en un solo flujo continuo).
+const YEARS = AVAILABLE_YEARS;            // ej. [2026, 2027]
+const FIRST_YEAR = YEARS[0];              // primer año del rango
+const LAST_YEAR = YEARS[YEARS.length - 1]; // último año del rango
+
+// Construye { set, names } con TODOS los festivos de todos los años del rango.
+// La clave incluye el año para distinguir, p.ej., el 1-1 de cada año:
+//   "1-1-2026" vs "1-1-2027"
+function buildHolidayData(){
+  const set = new Set();
+  const names = {};
+  for(const year of YEARS){
+    const list = HOLIDAYS[year] || [];
+    for(const [key, name] of list){
+      const fullKey = `${key}-${year}`;
+      set.add(fullKey);
+      names[fullKey] = name;
+    }
+  }
+  return { set, names };
+}
+
+// Clave que incluye el año (necesaria porque hay festivos repetidos en cada año)
+function dateKey(d){ return `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`; }
+// Clave corta "día-mes" sin año (para lookup en listas de festivos por año)
+function monthDayKey(d){ return `${d.getDate()}-${d.getMonth()+1}`; }
+function isoKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function isWeekend(d){ const w = d.getDay(); return w===0 || w===6; }
+function isHoliday(d){ return HOLIDAY_SET.has(dateKey(d)); }
+function isOff(d){ return isWeekend(d) || isHoliday(d); }
+function isWork(d){ return !isOff(d); }
+
+// Estado global del rango cargado (todos los días de FIRST_YEAR..LAST_YEAR seguidos)
+let HOLIDAY_SET, HOLIDAY_NAMES;
+let allDays, workArr, prefix, n;
+const START = new Date(FIRST_YEAR, 0, 1);
+
+function loadAllYears(){
+  const data = buildHolidayData();
+  HOLIDAY_SET = data.set;
+  HOLIDAY_NAMES = data.names;
+
+  // Recorrer todos los días desde el 1-Ene de FIRST_YEAR hasta el 31-Dic de LAST_YEAR
+  allDays = [];
+  const end = new Date(LAST_YEAR, 11, 31);
+  for(let d = new Date(FIRST_YEAR, 0, 1); d <= end; d.setDate(d.getDate()+1)){
+    allDays.push(new Date(d));
+  }
+  n = allDays.length;
+
+  workArr = allDays.map(d => isWork(d) ? 1 : 0);
+  prefix = new Array(n + 1).fill(0);
+  for(let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + workArr[i];
+}
+
+function workBetween(l, r){ return prefix[r + 1] - prefix[l]; } // inclusive l..r
+
+// Para cada left, encontrar el right máximo tal que workBetween(left,right) <= N, via binary search
+function computeWindows(N){
+  const results = [];
+  for(let left=0; left<n; left++){
+    // find max right using binary search on prefix
+    let lo=left, hi=n-1, best=left-1;
+    while(lo<=hi){
+      const mid = (lo+hi)>>1;
+      if(workBetween(left,mid) <= N){ best=mid; lo=mid+1; } else { hi=mid-1; }
+    }
+    if(best>=left){
+      results.push({left, right:best, length: best-left+1});
+    }
+  }
+  return results;
+}
+
+function clusterAndRank(windows, gapThreshold=10, topK=8){
+  // ordenar por longitud desc, luego por left asc
+  const sorted = [...windows].sort((a,b) => b.length - a.length || a.left - b.left);
+  const chosen = [];
+  for(const w of sorted){
+    const overlaps = chosen.some(c => Math.abs(c.left - w.left) <= gapThreshold || (w.left <= c.right && w.right >= c.left));
+    if(!overlaps){
+      chosen.push(w);
+    }
+    if(chosen.length >= topK) break;
+  }
+  return chosen;
+}
+
+function holidaysInRange(left,right){
+  const names = [];
+  const seen = new Set();
+  for(let i=left;i<=right;i++){
+    const d = allDays[i];
+    const k = dateKey(d);
+    if(HOLIDAY_SET.has(k) && !seen.has(k)){
+      seen.add(k);
+      names.push({name: HOLIDAY_NAMES[k], date: d});
+    }
+  }
+  return names;
+}
+
+function fmtShort(d){
+  const dias = ["dom","lun","mar","mié","jue","vie","sáb"];
+  return `${dias[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0,3).toLowerCase()}`;
+}
+function fmtLong(d){
+  const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  return `${dias[d.getDay()]} ${d.getDate()} de ${MONTH_NAMES[d.getMonth()].toLowerCase()}`;
+}
+
+let currentOptions = [];
+let selectedIndex = 0;
+let manualRange = null; // { startIdx, endIdx, lastWorkIdx, ... } | null
+let currentMode = 'auto'; // 'auto' | 'manual'
+let topK = 3; // cantidad de rangos a mostrar en modo automático
+
+function render(){
+  const N = parseInt(document.getElementById('daysInput').value) || 1;
+
+  if(currentMode === 'auto'){
+    const windows = computeWindows(N);
+    const options = clusterAndRank(windows, 10, topK);
+    currentOptions = options;
+    selectedIndex = 0;
+
+    // Headline
+    const best = options[0];
+    const headline = document.getElementById('headlineStat');
+    if(best){
+      const totalFound = windows.length;
+      headline.innerHTML = `Con <b>${N}</b> días hábiles logras hasta <b>${best.length}</b> días corridos libres.<span class="sub">Mostrando ${options.length} de ${totalFound} rango(s) encontrado(s) con esta cantidad de días.</span>`;
+    } else {
+      headline.innerHTML = `No se encontraron rangos válidos.`;
+    }
+
+    renderTickets(options, N);
+    // En modo auto limpiamos el banner manual
+    manualRange = null;
+    document.getElementById('manualBanner').classList.remove('visible');
+    document.getElementById('manualBanner').innerHTML = '';
+  } else {
+    // Modo manual: no se calculan/mejoran rangos automáticos
+    currentOptions = [];
+    renderManualBanner(N);
+  }
+
+  renderCalendar();
+}
+
+// ---------- MODO MANUAL ----------
+// Dada una fecha de inicio y N días hábiles, calcula hasta qué día se extienden
+// las vacaciones (incluyendo el arrastre natural de fines de semana y festivos).
+function computeManualRange(startDate, N){
+  if(!startDate) return null;
+  const startIdx = allDays.findIndex(d =>
+    d.getFullYear()===startDate.getFullYear() &&
+    d.getMonth()===startDate.getMonth() &&
+    d.getDate()===startDate.getDate()
+  );
+  if(startIdx === -1) return null;
+
+  let workCount = 0;
+  let lastWorkIdx = -1;
+  for(let i = startIdx; i < n; i++){
+    if(isWork(allDays[i])){
+      workCount++;
+      lastWorkIdx = i;
+      if(workCount === N) break;
+    }
+  }
+
+  if(workCount < N){
+    return { startIdx, insufficient: true, available: workCount, lastWorkIdx };
+  }
+
+  // arrastrar el fin mientras vengan días no laborables (gratis)
+  let endIdx = lastWorkIdx;
+  while(endIdx + 1 < n && isOff(allDays[endIdx + 1])){
+    endIdx++;
+  }
+
+  // Día hábil anterior a la salida (último día trabajado antes de vacaciones)
+  let prevWorkIdx = -1;
+  for(let i = startIdx - 1; i >= 0; i--){
+    if(isWork(allDays[i])){ prevWorkIdx = i; break; }
+  }
+
+  // Día hábil siguiente al regreso (primer día de vuelta al trabajo)
+  let nextWorkIdx = -1;
+  for(let i = endIdx + 1; i < n; i++){
+    if(isWork(allDays[i])){ nextWorkIdx = i; break; }
+  }
+
+  return { startIdx, endIdx, lastWorkIdx, prevWorkIdx, nextWorkIdx, sufficient: true };
+}
+
+function renderManualBanner(N){
+  const banner = document.getElementById('manualBanner');
+  const startInput = document.getElementById('startDate');
+  const raw = startInput.value;
+
+  if(!raw){
+    manualRange = null;
+    banner.classList.remove('visible');
+    banner.innerHTML = '';
+    return;
+  }
+
+  const [y,m,d] = raw.split('-').map(Number);
+  const startDate = new Date(y, m-1, d);
+  const range = computeManualRange(startDate, N);
+  manualRange = range;
+
+  if(!range){
+    banner.classList.add('visible');
+    banner.innerHTML = `<div class="mb-warn">La fecha debe estar dentro del rango ${FIRST_YEAR}–${LAST_YEAR}.</div>`;
+    return;
+  }
+
+  const startD = allDays[range.startIdx];
+  const lastWorkD = allDays[range.lastWorkIdx];
+
+  if(range.insufficient){
+    banner.classList.add('visible');
+    banner.innerHTML = `
+      <p class="mb-eyebrow">Modo manual</p>
+      <p class="mb-range">${fmtLong(startD)}</p>
+      <div class="mb-warn">Desde esta fecha solo quedan <b>${range.available}</b> día(s) hábil(es) hasta fin de ${LAST_YEAR}, pero pediste <b>${N}</b>. Reduce los días hábiles o elige una fecha anterior.</div>
+    `;
+    return;
+  }
+
+  const endD = allDays[range.endIdx];
+  const totalDays = range.endIdx - range.startIdx + 1;
+  const workDays = workBetween(range.startIdx, range.endIdx);
+  const freeDays = totalDays - workDays;
+  const trailing = range.endIdx - range.lastWorkIdx; // días extra gratis después del último día hábil
+  const hols = holidaysInRange(range.startIdx, range.endIdx);
+
+  const prevWorkD = range.prevWorkIdx >= 0 ? allDays[range.prevWorkIdx] : null;
+  const nextWorkD = range.nextWorkIdx >= 0 ? allDays[range.nextWorkIdx] : null;
+
+  banner.classList.add('visible');
+  banner.innerHTML = `
+    <p class="mb-eyebrow">Modo manual · ${N} día(s) hábil(es) solicitado(s)</p>
+    <p class="mb-range">${fmtLong(startD)} <span class="arrow">→</span> ${fmtLong(endD)}</p>
+    <div class="mb-grid">
+      <div class="mb-stat"><span class="k">Días corridos</span><span class="v"><b>${totalDays}</b></span></div>
+      <div class="mb-stat"><span class="k">Días hábiles usados</span><span class="v">${workDays}</span></div>
+      <div class="mb-stat"><span class="k">Días libres ganados</span><span class="v">${freeDays}</span></div>
+      <div class="mb-stat"><span class="k">Último día a solicitar</span><span class="v">${fmtShort(lastWorkD)}</span></div>
+      ${prevWorkD ? `<div class="mb-stat"><span class="k"><span style="color:#4CAF50">●</span> Última jornada antes de salir</span><span class="v">${fmtLong(prevWorkD)}</span></div>` : ''}
+      ${nextWorkD ? `<div class="mb-stat"><span class="k"><span style="color:#9C6ADE">●</span> Vuelves a trabajar</span><span class="v">${fmtLong(nextWorkD)}</span></div>` : ''}
+      ${hols.length ? `<div class="mb-stat"><span class="k">Festivos incluidos</span><span class="v" style="font-size:14px;font-weight:500">${hols.map(h=>h.name).join(', ')}</span></div>` : ''}
+    </div>
+    ${trailing > 0 ? `<div class="mb-warn">Se extiende <b>${trailing}</b> día(s) más gratis porque el último día solicitado cae justo antes de un fin de semana / festivo.</div>` : ''}
+    ${!prevWorkD ? `<div class="mb-warn">No hay día hábil anterior en el rango: las vacaciones empiezan el primer día (${FIRST_YEAR}).</div>` : ''}
+    ${!nextWorkD ? `<div class="mb-warn">No hay día hábil posterior en el rango: las vacaciones se cierran con el fin de ${LAST_YEAR}.</div>` : ''}
+  `;
+}
+
+function renderTickets(options, N){
+  const container = document.getElementById('tickets');
+  container.innerHTML = '';
+  if(options.length === 0){
+    container.innerHTML = '<div class="empty-state">Ingresa un número de días válido.</div>';
+    return;
+  }
+  options.forEach((opt, idx) => {
+    const startD = allDays[opt.left];
+    const endD = allDays[opt.right];
+    const vacDays = workBetween(opt.left, opt.right);
+    const hols = holidaysInRange(opt.left, opt.right);
+
+    const card = document.createElement('div');
+    card.className = 'ticket' + (idx===0 ? ' selected' : '');
+    card.dataset.idx = idx;
+    card.innerHTML = `
+      <div class="ticket-top">
+        <span class="ticket-rank">OPCIÓN ${String(idx+1).padStart(2,'0')}</span>
+        <div class="ticket-days">${opt.length}<span>días corridos</span></div>
+      </div>
+      <div class="ticket-range">${fmtShort(startD)} → ${fmtShort(endD)}</div>
+      <div class="ticket-meta">
+        <span>${vacDays} días hábiles</span>
+        <span>${startD.getFullYear()}${startD.getFullYear() !== endD.getFullYear() ? '–' + endD.getFullYear() : ''}</span>
+      </div>
+      ${hols.length ? `<div class="ticket-holidays"><b>Festivos:</b> ${hols.map(h=>h.name).join(', ')}</div>` : ''}
+    `;
+    card.addEventListener('click', () => {
+      selectedIndex = idx;
+      document.querySelectorAll('.ticket').forEach(t => t.classList.remove('selected'));
+      card.classList.add('selected');
+      renderCalendar();
+      const monthEl = document.getElementById(`month-${startD.getFullYear()}-${startD.getMonth()}`);
+      if(monthEl) monthEl.scrollIntoView({behavior:'smooth', block:'center'});
+    });
+    container.appendChild(card);
+  });
+}
+
+function renderCalendar(){
+  const yearContainer = document.getElementById('calendarYear');
+  yearContainer.innerHTML = '';
+
+  const sel = currentOptions[selectedIndex];
+  const selStart = sel ? allDays[sel.left] : null;
+  const selEnd = sel ? allDays[sel.right] : null;
+
+  // Para el modo automático calculamos prevWork/nextWork de la selección actual
+  let autoPrevWork = -1, autoNextWork = -1;
+  if(sel){
+    for(let i = sel.left - 1; i >= 0; i--){
+      if(isWork(allDays[i])){ autoPrevWork = i; break; }
+    }
+    for(let i = sel.right + 1; i < n; i++){
+      if(isWork(allDays[i])){ autoNextWork = i; break; }
+    }
+  }
+
+  // Recorremos los 24 meses: 12 por cada año del rango
+  let monthCounter = 0;
+  for(const yearIter of YEARS){
+    // Título separador de año (antes de enero)
+    const yearHeader = document.createElement('div');
+    yearHeader.className = 'year-header';
+    const yearHolidayCount = (HOLIDAYS[yearIter] || []).length;
+    yearHeader.innerHTML = `
+      <span class="yh-num">${yearIter}</span>
+      <span class="yh-line"></span>
+      <span class="yh-count">${yearHolidayCount} festivo${yearHolidayCount === 1 ? '' : 's'} oficiales</span>
+    `;
+    yearContainer.appendChild(yearHeader);
+
+    for(let m=0; m<12; m++){
+      const monthDiv = document.createElement('div');
+      monthDiv.className = 'month';
+      monthDiv.id = `month-${yearIter}-${m}`;
+
+      const daysInMonth = new Date(yearIter, m+1, 0).getDate();
+      const firstDay = new Date(yearIter, m, 1).getDay(); // 0=domingo
+      const leadingBlanks = (firstDay === 0) ? 6 : firstDay - 1; // convertir a lunes=0
+
+      let html = `<div class="month-title">${MONTH_NAMES[m]} <span class="n">${yearIter}</span></div>`;
+      html += `<div class="dow-row">${DOW.map(d=>`<div class="dow">${d}</div>`).join('')}</div>`;
+
+      const cells = [];
+      for(let i=0;i<leadingBlanks;i++) cells.push(null);
+      for(let day=1; day<=daysInMonth; day++) cells.push(day);
+      while(cells.length % 7 !== 0) cells.push(null);
+
+      let rowsHtml = '';
+      for(let r=0; r<cells.length; r+=7){
+        rowsHtml += '<div class="day-row">';
+        for(let c=r;c<r+7;c++){
+          const day = cells[c];
+          if(day===null){ rowsHtml += '<div class="day empty"></div>'; continue; }
+          const d = new Date(yearIter, m, day);
+          let classes = ['day'];
+          if(isWeekend(d)) classes.push('weekend');
+          if(isHoliday(d)) classes.push('holiday');
+
+          // En modo manual todos los días son clickeables
+          if(currentMode === 'manual') classes.push('selectable');
+
+          if(selStart && d >= selStart && d <= selEnd){
+            classes.push('in-bridge');
+            if(isWork(d)) classes.push('vacation-day');
+          }
+
+          // Índice global en allDays (días desde FIRST_YEAR-01-01)
+          const dayIdx = Math.floor((d - START) / 86400000);
+
+          // Resaltado del modo manual (tiene prioridad visual sobre la selección automática)
+          if(manualRange && !manualRange.insufficient){
+            if(dayIdx >= manualRange.startIdx && dayIdx <= manualRange.endIdx){
+              classes = ['day', 'in-bridge', 'selectable'];
+              if(isWork(d)) classes.push('vacation-day');
+              if(dayIdx === manualRange.startIdx) classes.push('manual-start');
+              if(dayIdx === manualRange.endIdx) classes.push('manual-end');
+            } else if(dayIdx === manualRange.prevWorkIdx){
+              classes.push('day', 'prev-work', 'selectable');
+            } else if(dayIdx === manualRange.nextWorkIdx){
+              classes.push('day', 'next-work', 'selectable');
+            }
+          } else if(sel){
+            // Modo automático: marcar día hábil anterior y siguiente de la selección
+            if(dayIdx === autoPrevWork){
+              classes.push('prev-work');
+            } else if(dayIdx === autoNextWork){
+              classes.push('next-work');
+            }
+          }
+
+          // Tooltip contextual
+          let tooltip = '';
+          if(isHoliday(d)) tooltip = HOLIDAY_NAMES[dateKey(d)];
+          if(classes.includes('prev-work')) tooltip = (tooltip ? tooltip + ' · ' : '') + 'Último día trabajado antes de salir';
+          if(classes.includes('next-work')) tooltip = (tooltip ? tooltip + ' · ' : '') + 'Primer día hábil al regresar';
+          if(classes.includes('manual-start')) tooltip = (tooltip ? tooltip + ' · ' : '') + 'Inicio de vacaciones';
+          if(classes.includes('manual-end')) tooltip = (tooltip ? tooltip + ' · ' : '') + 'Fin de vacaciones';
+          if(classes.includes('selectable') && !tooltip) tooltip = 'Haz clic para empezar aquí';
+
+          const iso = isoKey(d);
+          rowsHtml += `<div class="${classes.join(' ')}" data-date="${iso}" title="${tooltip}">${day}</div>`;
+        }
+        rowsHtml += '</div>';
+      }
+      html += rowsHtml;
+      monthDiv.innerHTML = html;
+      yearContainer.appendChild(monthDiv);
+      monthCounter++;
+    }
+  }
+
+  // Mostrar/ocultar el hint de selección según el modo y si ya hay fecha
+  const hint = document.getElementById('hintPick');
+  if(hint){
+    hint.classList.toggle('visible', currentMode === 'manual' && !manualRange);
+  }
+}
+
+// Eventos
+document.getElementById('daysInput').addEventListener('input', () => {
+  document.querySelectorAll('#presets button').forEach(b => b.classList.remove('active'));
+  render();
+});
+document.getElementById('stepUp').addEventListener('click', () => {
+  const inp = document.getElementById('daysInput');
+  inp.value = Math.min(245, (parseInt(inp.value)||0) + 1);
+  document.querySelectorAll('#presets button').forEach(b => b.classList.remove('active'));
+  render();
+});
+document.getElementById('stepDown').addEventListener('click', () => {
+  const inp = document.getElementById('daysInput');
+  inp.value = Math.max(1, (parseInt(inp.value)||1) - 1);
+  document.querySelectorAll('#presets button').forEach(b => b.classList.remove('active'));
+  render();
+});
+document.querySelectorAll('#presets button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('daysInput').value = btn.dataset.v;
+    document.querySelectorAll('#presets button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+// Evento del selector de cantidad de rangos a mostrar
+document.getElementById('countSelect').addEventListener('change', (e) => {
+  topK = parseInt(e.target.value) || 3;
+  render();
+});
+
+// Evento del input de fecha (modo manual)
+document.getElementById('startDate').addEventListener('change', () => {
+  render();
+  if(manualRange && !manualRange.insufficient){
+    const startD = allDays[manualRange.startIdx];
+    const monthEl = document.getElementById(`month-${startD.getFullYear()}-${startD.getMonth()}`);
+    if(monthEl) monthEl.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+});
+
+// Evento del switch de modo
+document.querySelectorAll('#modeSwitch button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setMode(btn.dataset.mode);
+  });
+});
+
+function setMode(mode){
+  currentMode = mode;
+  document.body.dataset.mode = mode;
+  const sw = document.getElementById('modeSwitch');
+  sw.dataset.mode = mode;
+  sw.querySelectorAll('button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  render();
+  // si entramos a manual con fecha ya elegida, llevamos el scroll al mes
+  if(mode === 'manual' && manualRange && !manualRange.insufficient){
+    const startD = allDays[manualRange.startIdx];
+    const monthEl = document.getElementById(`month-${startD.getFullYear()}-${startD.getMonth()}`);
+    if(monthEl) monthEl.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
+
+// Click en un día del calendario (modo manual) para seleccionar fecha de inicio
+document.getElementById('calendarYear').addEventListener('click', (e) => {
+  if(currentMode !== 'manual') return;
+  const cell = e.target.closest('.day.selectable');
+  if(!cell || !cell.dataset.date) return;
+  document.getElementById('startDate').value = cell.dataset.date;
+  render();
+  if(manualRange && !manualRange.insufficient){
+    const startD = allDays[manualRange.startIdx];
+    const monthEl = document.getElementById(`month-${startD.getFullYear()}-${startD.getMonth()}`);
+    if(monthEl) monthEl.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+});
+
+// ============================================================================
+//  INICIALIZACIÓN
+// ============================================================================
+
+// ============================================================================
+//  INICIALIZACIÓN
+// ============================================================================
+
+// Cargar ambos años seguidos (24 meses en un solo flujo continuo)
+loadAllYears();
+
+// Configurar el input de fecha para que acepte cualquier día del rango completo
+const startDateInput0 = document.getElementById('startDate');
+startDateInput0.min = `${FIRST_YEAR}-01-01`;
+startDateInput0.max = `${LAST_YEAR}-12-31`;
+
+// Etiqueta del rango en el footer (ej. "2026 – 2027")
+document.querySelectorAll('.year-tag').forEach(el => {
+  el.textContent = YEARS.length > 1 ? `${FIRST_YEAR} – ${LAST_YEAR}` : FIRST_YEAR;
+});
+
+// Sincronizar el selector de cantidad de rangos con el valor inicial (topK = 3)
+document.getElementById('countSelect').value = String(topK);
+
+render();
+</script>
+
+</body>
+</html>
