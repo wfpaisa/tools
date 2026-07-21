@@ -1,1 +1,193 @@
-hola1
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/colors.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", sans-serif;
+      }
+
+      body {
+        background-image:
+          radial-gradient(
+            circle at 15% 0%,
+            rgba(227, 178, 60, 0.06),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 90% 10%,
+            rgba(228, 87, 46, 0.05),
+            transparent 45%
+          );
+        min-height: 100vh;
+      }
+
+      .wrap {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* Header */
+      header {
+        padding: 56px 0 36px;
+        border-bottom: 1px solid var(--line);
+      }
+      .eyebrow {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin: 0 0 14px;
+      }
+      h1 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(32px, 5vw, 48px);
+        font-weight: 700;
+        margin: 0 0 12px;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+      }
+      header p {
+        max-width: 560px;
+        color: var(--ink-dim);
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 0;
+      }
+
+      /* Project list */
+      .projects {
+        padding: 32px 0 60px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .project {
+        display: block;
+        text-decoration: none;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 22px 26px;
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease,
+          background 0.15s ease;
+      }
+      .project::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: var(--gold-dim);
+        transition: background 0.15s ease;
+      }
+      .project:hover {
+        transform: translateY(-2px);
+        border-color: var(--ink-faint);
+        background: var(--surface-2);
+      }
+      .project:hover::before {
+        background: var(--gold);
+      }
+      .project:active {
+        transform: translateY(0);
+      }
+
+      .project-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+      .project-name {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0 0 6px;
+      }
+      .project-desc {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        color: var(--ink-dim);
+        margin: 0;
+        line-height: 1.5;
+      }
+      .project-tag {
+        display: inline-block;
+        margin-top: 12px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--rust);
+        background: var(--rust-soft);
+        padding: 4px 10px;
+        border-radius: 6px;
+      }
+
+      footer {
+        text-align: center;
+        color: var(--ink-faint);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        padding: 20px 0 40px;
+        border-top: 1px solid var(--line);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="eyebrow">Herramientas personales</p>
+        <h1>Tools</h1>
+        <p>Colección de herramientas web para uso personal.</p>
+      </header>
+
+      <div class="projects">
+        <a class="project" href="/vacaciones/base/">
+          <div class="project-icon">🏖️</div>
+          <h2 class="project-name">Planificador de Vacaciones</h2>
+          <p class="project-desc">
+            Calcula los mejores rangos de fechas para tomar vacaciones en
+            Colombia, aprovechando los festivos oficiales y fines de semana.
+          </p>
+          <span class="project-tag">Colombia · Festivos · Puentes</span>
+        </a>
+
+        <a class="project" href="/hipoteca/">
+          <div class="project-icon">🏡</div>
+          <h2 class="project-name">Calculadora Hipotecaria</h2>
+          <p class="project-desc">
+            Simulación de crédito hipotecario con abonos a capital. Modelo de
+            amortización francés con capitalización mensual.
+          </p>
+          <span class="project-tag">Hipoteca · Amortización · Abonos</span>
+        </a>
+      </div>
+    </div>
+  </body>
+</html>
